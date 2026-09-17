@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field Density — Sand Cone Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16202b; --ink-soft:#5b6875; --line:#d6dce2; --bg:#eef1f4; --surface:#ffffff;
+  --calc-bg:#eceff2; --fixed-bg:#fdf6dd; --fixed-line:#e8d89a;
+  --blue:#1f4e79; --pass:#15734f; --fail:#b3261e; --warn:#8a5a00;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;}
+.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:720px; margin:0 auto; padding:0 12px 96px}
+
+header{position:sticky; top:0; z-index:20; background:var(--blue); color:#fff;
+  padding:10px 12px; padding-top:calc(10px + env(safe-area-inset-top,0)); display:flex; align-items:center; gap:8px}
+header h1{font-size:15px; font-weight:600; margin:0; flex:1; line-height:1.25}
+header h1 span{display:block; font-weight:400; font-size:12px; opacity:.75}
+.hbtn{background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25);
+  border-radius:8px; padding:7px 11px; font:inherit; font-size:13px; cursor:pointer}
+.hbtn:hover{background:rgba(255,255,255,.22)}
+
+.pick{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0}
+.field label{display:block; font-size:12px; color:var(--ink-soft); margin:0 0 4px 2px}
+select,input,textarea{width:100%; font:inherit; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:8px; padding:11px 10px; min-height:44px}
+select{appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+  background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat; padding-right:32px}
+input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--blue); outline-offset:1px}
+
+.sheet{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-top:12px}
+.sheet-head{background:#f6f8f9; border-bottom:1px solid var(--line); padding:8px 12px;
+  font-size:12px; color:var(--ink-soft); display:flex; justify-content:space-between; align-items:center; gap:8px}
+.sheet-head b{color:var(--ink); font-weight:600; font-size:13px}
+
+/* entry block */
+.entry{padding:4px 10px 10px}
+.erow{display:grid; grid-template-columns:22px 1fr 118px 46px; align-items:center; gap:6px; padding:7px 0 7px 4px; border-bottom:1px solid #edf0f2}
+.erow:last-child{border-bottom:0}
+.erow .n{font-size:11px; color:#97a2ad; text-align:right}
+.erow .lbl{font-size:13.5px; line-height:1.25}
+.erow .unit{font-size:11px; color:var(--ink-soft)}
+.erow input{text-align:right; padding:10px 9px; min-height:44px; font-size:16px}
+
+.row{display:grid; grid-template-columns:22px 1fr 108px 46px; align-items:center; gap:6px;
+  padding:6px 10px 6px 6px; border-bottom:1px solid #edf0f2}
+.row:last-child{border-bottom:0}
+.row .n{font-size:11px; color:#97a2ad; text-align:right}
+.row .lbl{font-size:13px; line-height:1.25}
+.row .unit{font-size:11px; color:var(--ink-soft)}
+.row .out{display:block; padding:8px; border-radius:7px; background:var(--calc-bg);
+  border:1px solid transparent; text-align:right; min-height:36px; line-height:20px; color:#33414f}
+.row .fix{background:var(--fixed-bg); border-color:var(--fixed-line); color:#5c4a12}
+.row input.ent{background:#fff; border:1px solid var(--line); color:var(--ink); font-weight:500;
+  border-radius:7px; text-align:right; padding:8px; min-height:36px; font-size:15px}
+.row.sub{background:#fbfcfd}
+.band{padding:5px 12px; background:#f2f5f7; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+  font-size:11px; letter-spacing:.06em; color:var(--ink-soft); font-weight:600}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--ink-soft); padding:8px 12px 10px}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; border:1px solid var(--line)}
+
+.result{margin-top:12px; border-radius:var(--r); overflow:hidden; border:1px solid var(--line); background:var(--surface)}
+.verdict{padding:14px; color:#fff; display:flex; align-items:baseline; gap:12px}
+.verdict.ok{background:var(--pass)} .verdict.no{background:var(--fail)} .verdict.idle{background:#8894a0}
+.verdict .big{font-size:34px; font-weight:600; line-height:1}
+.verdict .tag{font-size:16px; font-weight:600; letter-spacing:.04em}
+.verdict .sub{font-size:12px; opacity:.85; margin-left:auto; text-align:right}
+.gauge{height:34px; position:relative; background:#f6f8f9; border-bottom:1px solid var(--line)}
+.gauge .bar{position:absolute; left:0; top:0; bottom:0; background:#cfe3d8; transition:width .25s ease}
+.gauge .bar.no{background:#f3d3d0}
+.gauge .mark{position:absolute; top:0; bottom:0; width:2px; background:var(--ink)}
+.gauge .mtext{position:absolute; top:50%; transform:translateY(-50%); font-size:11px; padding-left:5px}
+.gauge .scale{position:absolute; bottom:2px; font-size:10px; color:#97a2ad}
+.notes{padding:10px 12px; font-size:13px}
+.notes div{padding:3px 0}
+.notes .bad{color:var(--fail)} .notes .good{color:var(--pass)} .notes .warn{color:var(--warn)}
+
+.actions{display:flex; gap:8px; margin-top:12px}
+.btn{flex:1; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:12px;
+  font:inherit; font-size:14px; cursor:pointer; min-height:46px}
+.btn.primary{background:var(--blue); border-color:var(--blue); color:#fff}
+.btn:hover{filter:brightness(.97)}
+
+/* collapsible settings sections */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); margin-top:12px; overflow:hidden}
+.card > summary{list-style:none; cursor:pointer; padding:13px 14px; display:flex; align-items:center; gap:10px;
+  font-size:14px; font-weight:600; background:#f6f8f9}
+.card > summary::-webkit-details-marker{display:none}
+.card > summary .chev{margin-left:auto; color:var(--ink-soft); transition:transform .18s ease; font-weight:400}
+.card[open] > summary .chev{transform:rotate(180deg)}
+.card > summary .count{font-weight:400; font-size:12px; color:var(--ink-soft)}
+.card .body{padding:12px; border-top:1px solid var(--line)}
+p.hint{margin:0 0 10px; font-size:12px; color:var(--ink-soft)}
+.editor{border:1px solid var(--line); border-radius:9px; padding:10px; margin-bottom:9px; background:#fbfcfd}
+.editor .top{display:flex; gap:8px; align-items:center; margin-bottom:8px}
+.editor .top input{flex:1; font-weight:600}
+.grid4{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.mini label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:3px}
+.mini input{padding:9px 8px; min-height:40px; text-align:right}
+.del{background:#fff; border:1px solid var(--line); color:var(--fail); border-radius:8px; padding:9px 11px; cursor:pointer; font:inherit; font-size:13px}
+.banner{margin-top:12px; padding:10px 12px; border-radius:9px; font-size:12.5px; border:1px solid var(--fixed-line); background:var(--fixed-bg); color:#5c4a12}
+.banner button{margin-left:8px; background:#fff; border:1px solid var(--fixed-line); border-radius:7px; padding:5px 9px; font:inherit; font-size:12px; cursor:pointer}
+.toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff;
+  padding:10px 16px; border-radius:9px; font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:50; max-width:90%; text-align:center}
+.toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+.hide{display:none !important}
+.gate{max-width:360px; margin:50px auto}
+.err{color:var(--fail); font-size:12px; margin-top:6px; min-height:16px}
+.meta{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px}
+footer{font-size:11px; color:var(--ink-soft); text-align:center; padding:18px 0 0}
+code{background:#eceff2; border-radius:4px; padding:1px 5px; font-family:"IBM Plex Mono",monospace; font-size:12px}
+
+@media (max-width:380px){ .row,.erow{grid-template-columns:20px 1fr 100px 40px} .row .lbl{font-size:12.5px} }
+@media print{
+  header,.actions,.legend,.hbtn,footer,.entry,.banner,.pick{display:none !important}
+  body{background:#fff} .wrap{padding:0} .sheet,.result{border-color:#999; break-inside:avoid}
+  .verdict{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .row input.ent{border:0; background:#fff !important; padding:8px 0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Field Density — Sand Cone<span>ASTM D1556 / T 191</span></h1>
+  <button class="hbtn" id="btnPrint" type="button">Print</button>
+  <button class="hbtn" id="btnSettings" type="button">Settings</button>
+</header>
+
+<!-- ================= TEST ================= -->
+<main class="wrap" id="viewTest">
+
+  <div class="pick">
+    <div class="field"><label for="blockSel">Block</label><select id="blockSel"></select></div>
+    <div class="field"><label for="inspSel">Inspector</label><select id="inspSel"></select></div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-head"><b>Enter readings</b><span id="setupWarn" class="hide" style="color:var(--fail)">Missing setup values</span></div>
+    <div class="entry">
+      <div class="erow">
+        <div class="n">1</div><div class="lbl">Wt. of apparatus filled with sand</div>
+        <div><input id="i1" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div class="unit">gm</div>
+      </div>
+      <div class="erow">
+        <div class="n">2</div><div class="lbl">Wt. of apparatus and remaining sand</div>
+        <div><input id="i2" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div class="unit">gm</div>
+      </div>
+      <div class="erow">
+        <div class="n">8</div><div class="lbl">Wt. of wet soil from hole + container</div>
+        <div><input id="i8" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div class="unit">gm</div>
+      </div>
+      <div class="erow">
+        <div class="n">12</div><div class="lbl">Moisture content (T-217)</div>
+        <div><input id="i12" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div class="unit">%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="verdict idle" id="verdict">
+      <span class="big num" id="vPct">—</span>
+      <span class="tag" id="vTag">Enter readings</span>
+      <span class="sub" id="vSub"></span>
+    </div>
+    <div class="gauge" id="gauge">
+      <div class="bar" id="gBar" style="width:0"></div>
+      <div class="mark" id="gMark" style="left:33%"></div>
+      <div class="mtext" id="gMtext" style="left:33%">95%</div>
+      <div class="scale" style="left:6px">90%</div>
+      <div class="scale" style="right:6px">105%</div>
+    </div>
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <div class="sheet">
+    <div class="sheet-head"><b>Full test sheet</b><span id="sheetTag"></span></div>
+
+    <div class="band">VOLUME OF TEST HOLE</div>
+    <div class="row"><div class="n">1</div><div class="lbl">Wt. of apparatus filled with sand</div><div><input id="v1" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">2</div><div class="lbl">Wt. of apparatus and remaining sand</div><div><input id="v2" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row sub"><div class="n">3</div><div class="lbl">Wt. of sand in hole, plate and cone</div><div><span class="out num" id="o3">—</span></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">4</div><div class="lbl">Wt. of sand in cone and plate</div><div><span class="out fix num" id="f4">—</span></div><div class="unit">gm</div></div>
+    <div class="row sub"><div class="n">5</div><div class="lbl">Wt. of sand in hole</div><div><span class="out num" id="o5">—</span></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">6</div><div class="lbl">Bulk density of sand</div><div><span class="out fix num" id="f6">—</span></div><div class="unit">g/cm³</div></div>
+    <div class="row sub"><div class="n">7</div><div class="lbl">Volume of test hole</div><div><span class="out num" id="o7">—</span></div><div class="unit">cm³</div></div>
+
+    <div class="band">WET DENSITY</div>
+    <div class="row"><div class="n">8</div><div class="lbl">Wt. of wet soil from hole + container</div><div><input id="v8" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">9</div><div class="lbl">Wt. of container</div><div><span class="out fix num" id="f9">—</span></div><div class="unit">gm</div></div>
+    <div class="row sub"><div class="n">10</div><div class="lbl">Wt. of soil from hole</div><div><span class="out num" id="o10">—</span></div><div class="unit">gm</div></div>
+    <div class="row sub"><div class="n">11</div><div class="lbl">Wet density</div><div><span class="out num" id="o11">—</span></div><div class="unit">g/cm³</div></div>
+
+    <div class="band">DRY DENSITY</div>
+    <div class="row"><div class="n">12</div><div class="lbl">Moisture content (T-217)</div><div><input id="v12" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">%</div></div>
+    <div class="row sub"><div class="n">13</div><div class="lbl">Dry density</div><div><span class="out num" id="o13">—</span></div><div class="unit">g/cm³</div></div>
+    <div class="row"><div class="n">14</div><div class="lbl">Max. dry density</div><div><span class="out fix num" id="f14">—</span></div><div class="unit">g/cm³</div></div>
+    <div class="row"><div class="n">15</div><div class="lbl">Optimum moisture content</div><div><span class="out fix num" id="f15">—</span></div><div class="unit">%</div></div>
+    <div class="row sub"><div class="n">16</div><div class="lbl">Degree of compaction</div><div><span class="out num" id="o16">—</span></div><div class="unit">%</div></div>
+    <div class="row"><div class="n">17</div><div class="lbl">Specified min. compaction</div><div><span class="out fix num" id="f17">—</span></div><div class="unit">%</div></div>
+
+    <div class="legend">
+      <span><i style="background:#fff"></i>You enter</span>
+      <span><i style="background:var(--calc-bg)"></i>Calculated</span>
+      <span><i style="background:var(--fixed-bg);border-color:var(--fixed-line)"></i>From settings</span>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="field"><label for="mDate">Date</label><input id="mDate" type="date"></div>
+    <div class="field"><label for="mLoc">Location / MH#</label><input id="mLoc" type="text" placeholder="e.g. MH 531717 – 531718"></div>
+  </div>
+
+  <div class="banner hide" id="localBanner">Using settings saved on this device, not the team file.
+    <button id="btnDropLocal" type="button">Use team settings</button></div>
+
+  <div class="actions">
+    <button class="btn" id="btnClear" type="button">Clear entries</button>
+    <button class="btn primary" id="btnPrint2" type="button">Print / Save PDF</button>
+  </div>
+
+  <footer>Compaction = dry density ÷ max dry density. Result checks the compaction limit and the moisture range.</footer>
+</main>
+
+<!-- ================= SETTINGS ================= -->
+<main class="wrap hide" id="viewSettings">
+
+  <div class="gate card" id="gate" style="padding:14px">
+    <h2 style="font-size:14px; margin:0 0 2px">Settings</h2>
+    <p class="hint">Enter the password to edit proctor and inspector data.</p>
+    <input id="pw" type="password" placeholder="Password" autocomplete="off">
+    <div class="err" id="pwErr"></div>
+    <div class="actions">
+      <button class="btn" id="btnGateBack" type="button">Back</button>
+      <button class="btn primary" id="btnGateOk" type="button">Unlock</button>
+    </div>
+  </div>
+
+  <div id="settingsBody" class="hide">
+    <details class="card" open>
+      <summary>Blocks — proctor data <span class="count" id="blockCount"></span><span class="chev">▾</span></summary>
+      <div class="body">
+        <div id="blockList"></div>
+        <button class="btn" id="btnAddBlock" type="button">Add block</button>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Inspectors — apparatus values <span class="count" id="inspCount"></span><span class="chev">▾</span></summary>
+      <div class="body">
+        <div id="inspList"></div>
+        <button class="btn" id="btnAddInsp" type="button">Add inspector</button>
+      </div>
+    </details>
+
+    <details class="card">
+      <summary>Publishing changes <span class="chev">▾</span></summary>
+      <div class="body">
+        <p class="hint">Everyone loads <code>config.json</code> from the site. Edits here are not shared until that file is replaced.</p>
+        <div class="actions" style="margin-top:0">
+          <button class="btn primary" id="btnExport" type="button">Download config.json</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">Upload the downloaded file to the repository, replacing the old <code>config.json</code>. Everyone gets it on their next page load.</p>
+        <div class="actions">
+          <button class="btn" id="btnSaveLocal" type="button">Save on this device only</button>
+          <button class="btn" id="btnReload" type="button">Reload team file</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="actions">
+      <button class="btn primary" id="btnBack" type="button">Back to test</button>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+var PASSWORD = "mpw1955";
+var LKEY = "sandcone.localConfig.v2";
+
+/* Fallback copy — used when config.json cannot be loaded (e.g. opened as a local file). */
+var EMBEDDED = {
+  blocks: [
+    {name:"Block 1", mdd:0,     omc:0,   tol:3, min:95},
+    {name:"Block 2", mdd:0,     omc:0,   tol:3, min:95},
+    {name:"Block 3", mdd:2.067, omc:8.1, tol:3, min:95},
+    {name:"Block 4", mdd:1.98,  omc:8.1, tol:3, min:95},
+    {name:"Block 5", mdd:1.96,  omc:8.1, tol:3, min:95},
+    {name:"Block 6", mdd:1.991, omc:8.3, tol:3, min:95}
+  ],
+  inspectors: [
+    {name:"Mahmoud", cone:1659, sand:1.539, cont:340},
+    {name:"Munther", cone:1843, sand:1.539, cont:340}
+  ]
+};
+
+var cfg = clone(EMBEDDED);
+var usingLocal = false;
+var $ = function(id){return document.getElementById(id);};
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function num(v){ var n=parseFloat(v); return isFinite(n)?n:NaN; }
+function fmt(n,d){ return isFinite(n)?n.toFixed(d):"—"; }
+function valid(o){ return o && Array.isArray(o.blocks) && Array.isArray(o.inspectors) && o.blocks.length && o.inspectors.length; }
+function toast(m){ var t=$("toast"); t.textContent=m; t.classList.add("on"); setTimeout(function(){t.classList.remove("on");},2000); }
+
+function localConfig(){
+  try{ var o=JSON.parse(localStorage.getItem(LKEY)); return valid(o)?o:null; }catch(e){ return null; }
+}
+function loadTeam(then){
+  fetch("config.json?ts="+Date.now(), {cache:"no-store"})
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(o){ if(valid(o)) cfg=o; })
+    .catch(function(){})
+    .then(function(){ then(); });
+}
+function boot(){
+  var lc = localConfig();
+  if(lc){ cfg=lc; usingLocal=true; $("localBanner").classList.remove("hide"); ready(); }
+  else { loadTeam(ready); }
+}
+function ready(){ fillSelects(); calc(); }
+
+/* ---------- selectors ---------- */
+function fillSelects(){
+  var b=$("blockSel"), i=$("inspSel");
+  var bv=b.value||localStorage.getItem("sandcone.lastBlock")||"0";
+  var iv=i.value||localStorage.getItem("sandcone.lastInsp")||"0";
+  b.innerHTML=""; i.innerHTML="";
+  cfg.blocks.forEach(function(x,k){ var o=document.createElement("option"); o.value=k; o.textContent=x.name; b.appendChild(o); });
+  cfg.inspectors.forEach(function(x,k){ var o=document.createElement("option"); o.value=k; o.textContent=x.name; i.appendChild(o); });
+  b.value = cfg.blocks[bv] ? bv : "0";
+  i.value = cfg.inspectors[iv] ? iv : "0";
+  $("blockCount").textContent = cfg.blocks.length;
+  $("inspCount").textContent = cfg.inspectors.length;
+}
+
+/* ---------- calculation ---------- */
+function calc(){
+  var B = cfg.blocks[$("blockSel").value] || {mdd:0,omc:0,tol:3,min:95};
+  var I = cfg.inspectors[$("inspSel").value] || {cone:0,sand:0,cont:0};
+
+  var w1=num($("i1").value), w2=num($("i2").value), w8=num($("i8").value), mc=num($("i12").value);
+  var cone=num(I.cone), sand=num(I.sand), cont=num(I.cont);
+  var mdd=num(B.mdd), omc=num(B.omc), tol=num(B.tol), min=num(B.min);
+
+  $("f4").textContent  = cone>0?fmt(cone,1):"—";
+  $("f6").textContent  = sand>0?fmt(sand,3):"—";
+  $("f9").textContent  = cont>0?fmt(cont,1):"—";
+  $("f14").textContent = mdd>0?fmt(mdd,3):"—";
+  $("f15").textContent = omc>0?(fmt(omc,1)+" ±"+fmt(tol,0)):"—";
+  $("f17").textContent = min>0?fmt(min,1):"—";
+  $("sheetTag").textContent = (cfg.blocks[$("blockSel").value]||{}).name + " · " + (cfg.inspectors[$("inspSel").value]||{}).name;
+
+  var missing = !(cone>0)||!(sand>0)||!(cont>0)||!(mdd>0)||!(omc>0)||!(min>0);
+  $("setupWarn").classList.toggle("hide", !missing);
+
+  var r3 = (isFinite(w1)&&isFinite(w2)) ? w1-w2 : NaN;
+  var r5 = (isFinite(r3)&&cone>0) ? r3-cone : NaN;
+  var r7 = (isFinite(r5)&&sand>0) ? r5/sand : NaN;
+  var r10= (isFinite(w8)&&cont>0) ? w8-cont : NaN;
+  var r11= (isFinite(r10)&&isFinite(r7)&&r7>0) ? r10/r7 : NaN;
+  var r13= (isFinite(r11)&&isFinite(mc)) ? r11/(1+mc/100) : NaN;
+  var r16= (isFinite(r13)&&mdd>0) ? r13/mdd*100 : NaN;
+
+  $("o3").textContent=fmt(r3,1); $("o5").textContent=fmt(r5,1); $("o7").textContent=fmt(r7,1);
+  $("o10").textContent=fmt(r10,1); $("o11").textContent=fmt(r11,3);
+  $("o13").textContent=fmt(r13,3); $("o16").textContent=isFinite(r16)?fmt(r16,1):"—";
+
+  var errs=[], oks=[];
+  if(isFinite(w1)&&isFinite(w2)&&w2>=w1) errs.push("Row 2 must be less than row 1 — recheck the sand weights.");
+  if(isFinite(r5)&&r5<=0) errs.push("Sand in hole is zero or negative — recheck rows 1, 2 and the cone weight.");
+  if(isFinite(r10)&&r10<=0) errs.push("Soil weight is zero or negative — recheck row 8 and the container weight.");
+  if(isFinite(mc)&&(mc<0||mc>40)) errs.push("Moisture content looks out of range — enter a percentage, e.g. 9.");
+  if(isFinite(r11)&&(r11<1.2||r11>2.8)) errs.push("Wet density "+fmt(r11,3)+" g/cm³ is unusual — recheck the entries.");
+
+  var moistFail=false, moistOk=false;
+  if(isFinite(mc)&&omc>0){ if(mc<omc-tol||mc>omc+tol) moistFail=true; else moistOk=true; }
+
+  var ready = isFinite(r16) && errs.length===0;
+  var v=$("verdict"), bar=$("gBar"), notes=$("notes");
+  notes.innerHTML="";
+  var mpos = Math.max(0,Math.min(100,((min>0?min:95)-90)/15*100));
+  $("gMark").style.left=mpos+"%"; $("gMtext").style.left=mpos+"%"; $("gMtext").textContent=fmt(min>0?min:95,0)+"%";
+
+  if(!ready){
+    v.className="verdict idle";
+    $("vPct").textContent = isFinite(r16)?fmt(r16,1)+"%":"—";
+    $("vTag").textContent = errs.length?"Check entries":"Enter readings";
+    $("vSub").textContent = "";
+    bar.style.width="0"; bar.className="bar";
+  } else {
+    var compOk = r16>=min, pass = compOk && !moistFail;
+    v.className = "verdict "+(pass?"ok":"no");
+    $("vPct").textContent = fmt(r16,1)+"%";
+    $("vTag").textContent = pass?"PASS":"FAIL";
+    $("vSub").textContent = "dry density "+fmt(r13,3)+" g/cm³";
+    bar.style.width = Math.max(0,Math.min(100,(r16-90)/15*100))+"%";
+    bar.className = "bar"+(pass?"":" no");
+    if(compOk) oks.push("Compaction "+fmt(r16,1)+"% meets the "+fmt(min,1)+"% minimum.");
+    else errs.push("Compaction "+fmt(r16,1)+"% is below the "+fmt(min,1)+"% minimum.");
+    if(moistOk) oks.push("Moisture "+fmt(mc,1)+"% is within "+fmt(omc,1)+" ±"+fmt(tol,0)+".");
+    if(moistFail) errs.push("Moisture "+fmt(mc,1)+"% is outside "+fmt(omc,1)+" ±"+fmt(tol,0)+" — layer rejected.");
+  }
+  if(missing) notes.appendChild(note("warn","Some settings are empty for this block or inspector. Open Settings to complete them."));
+  errs.forEach(function(t){ notes.appendChild(note("bad",t)); });
+  oks.forEach(function(t){ notes.appendChild(note("good",t)); });
+}
+function note(cls,text){ var d=document.createElement("div"); d.className=cls; d.textContent=text; return d; }
+
+/* ---------- editors ---------- */
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function mini(k,f,label,val){
+  return '<div class="mini"><label>'+label+'</label><input class="num" data-k="'+k+'" data-f="'+f+
+    '" type="number" inputmode="decimal" step="any" value="'+(val||val===0?val:"")+'" placeholder="0"></div>';
+}
+function renderBlocks(){
+  var box=$("blockList"); box.innerHTML="";
+  cfg.blocks.forEach(function(b,k){
+    var e=document.createElement("div"); e.className="editor";
+    e.innerHTML='<div class="top"><input data-k="'+k+'" data-f="name" type="text" value="'+esc(b.name)+'" placeholder="Block name">'+
+      '<button class="del" data-del="'+k+'" type="button">Remove</button></div><div class="grid4">'+
+      mini(k,"mdd","Max dry density (g/cm³)",b.mdd)+mini(k,"omc","Optimum moisture (%)",b.omc)+
+      mini(k,"tol","Moisture tolerance ±",b.tol)+mini(k,"min","Min compaction (%)",b.min)+'</div>';
+    box.appendChild(e);
+  });
+  bind(box,"blocks",renderBlocks);
+}
+function renderInspectors(){
+  var box=$("inspList"); box.innerHTML="";
+  cfg.inspectors.forEach(function(p,k){
+    var e=document.createElement("div"); e.className="editor";
+    e.innerHTML='<div class="top"><input data-k="'+k+'" data-f="name" type="text" value="'+esc(p.name)+'" placeholder="Inspector name">'+
+      '<button class="del" data-del="'+k+'" type="button">Remove</button></div><div class="grid4">'+
+      mini(k,"cone","Sand in cone + plate (gm)",p.cone)+mini(k,"sand","Bulk density of sand (g/cm³)",p.sand)+
+      mini(k,"cont","Container weight (gm)",p.cont)+'</div>';
+    box.appendChild(e);
+  });
+  bind(box,"inspectors",renderInspectors);
+}
+function bind(box,list,rerender){
+  box.querySelectorAll("input").forEach(function(inp){
+    inp.addEventListener("input",function(){
+      var k=+this.dataset.k, f=this.dataset.f;
+      cfg[list][k][f] = (f==="name") ? this.value : (num(this.value)||0);
+      fillSelects(); calc();
+    });
+  });
+  box.querySelectorAll("[data-del]").forEach(function(b){
+    b.addEventListener("click",function(){
+      if(cfg[list].length<=1){ toast("Keep at least one entry"); return; }
+      cfg[list].splice(+this.dataset.del,1); rerender(); fillSelects(); calc();
+    });
+  });
+}
+
+/* ---------- navigation ---------- */
+function showSettings(){
+  $("viewTest").classList.add("hide"); $("viewSettings").classList.remove("hide");
+  $("gate").classList.remove("hide"); $("settingsBody").classList.add("hide");
+  $("pw").value=""; $("pwErr").textContent=""; $("pw").focus(); window.scrollTo(0,0);
+}
+function showTest(){ $("viewSettings").classList.add("hide"); $("viewTest").classList.remove("hide"); window.scrollTo(0,0); }
+
+/* ---------- wiring: linked entry pairs (top summary <-> full sheet) ---------- */
+var PAIRS = [["i1","v1"],["i2","v2"],["i8","v8"],["i12","v12"]];
+PAIRS.forEach(function(p){
+  var a=$(p[0]), b=$(p[1]);
+  a.addEventListener("input",function(){ if(b.value!==a.value) b.value=a.value; calc(); });
+  b.addEventListener("input",function(){ if(a.value!==b.value) a.value=b.value; calc(); });
+});
+$("blockSel").addEventListener("change",function(){ localStorage.setItem("sandcone.lastBlock",this.value); calc(); });
+$("inspSel").addEventListener("change",function(){ localStorage.setItem("sandcone.lastInsp",this.value); calc(); });
+
+$("btnSettings").addEventListener("click",showSettings);
+$("btnGateBack").addEventListener("click",showTest);
+$("btnGateOk").addEventListener("click",function(){
+  if($("pw").value===PASSWORD){
+    $("gate").classList.add("hide"); $("settingsBody").classList.remove("hide");
+    renderBlocks(); renderInspectors();
+  } else $("pwErr").textContent="Wrong password. Try again.";
+});
+$("pw").addEventListener("keydown",function(e){ if(e.key==="Enter") $("btnGateOk").click(); });
+
+$("btnAddBlock").addEventListener("click",function(){
+  cfg.blocks.push({name:"Block "+(cfg.blocks.length+1),mdd:0,omc:0,tol:3,min:95});
+  renderBlocks(); fillSelects();
+});
+$("btnAddInsp").addEventListener("click",function(){
+  cfg.inspectors.push({name:"Inspector "+(cfg.inspectors.length+1),cone:0,sand:1.539,cont:340});
+  renderInspectors(); fillSelects();
+});
+$("btnExport").addEventListener("click",function(){
+  var blob=new Blob([JSON.stringify(cfg,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="config.json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  toast("Upload this file to the repository to share it");
+});
+$("btnSaveLocal").addEventListener("click",function(){
+  try{ localStorage.setItem(LKEY,JSON.stringify(cfg)); usingLocal=true;
+    $("localBanner").classList.remove("hide"); toast("Saved on this device only"); }
+  catch(e){ toast("Could not save on this device"); }
+});
+$("btnReload").addEventListener("click",function(){
+  try{ localStorage.removeItem(LKEY); }catch(e){}
+  usingLocal=false; $("localBanner").classList.add("hide");
+  loadTeam(function(){ renderBlocks(); renderInspectors(); fillSelects(); calc(); toast("Team settings loaded"); });
+});
+$("btnDropLocal").addEventListener("click",function(){
+  try{ localStorage.removeItem(LKEY); }catch(e){}
+  usingLocal=false; $("localBanner").classList.add("hide");
+  loadTeam(function(){ fillSelects(); calc(); toast("Team settings loaded"); });
+});
+$("btnBack").addEventListener("click",function(){ fillSelects(); calc(); showTest(); });
+$("btnClear").addEventListener("click",function(){
+  ["i1","i2","i8","i12","v1","v2","v8","v12"].forEach(function(id){ $(id).value=""; });
+  $("mLoc").value=""; calc(); $("i1").focus();
+});
+$("btnPrint").addEventListener("click",function(){ window.print(); });
+$("btnPrint2").addEventListener("click",function(){ window.print(); });
+
+$("mDate").valueAsDate = new Date();
+boot();
+})();
+</script>
+</body>
+</html>

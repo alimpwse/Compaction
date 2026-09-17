@@ -1,0 +1,14 @@
+{
+  "blocks": [
+    { "name": "Block 1", "mdd": 0,     "omc": 0,   "tol": 3, "min": 95 },
+    { "name": "Block 2", "mdd": 0,     "omc": 0,   "tol": 3, "min": 95 },
+    { "name": "Block 3", "mdd": 2.067, "omc": 8.1, "tol": 3, "min": 95 },
+    { "name": "Block 4", "mdd": 1.98,  "omc": 8.1, "tol": 3, "min": 95 },
+    { "name": "Block 5", "mdd": 1.96,  "omc": 8.1, "tol": 3, "min": 95 },
+    { "name": "Block 6", "mdd": 1.991, "omc": 8.3, "tol": 3, "min": 95 }
+  ],
+  "inspectors": [
+    { "name": "Mahmoud", "cone": 1659, "sand": 1.539, "cont": 340 },
+    { "name": "Munther", "cone": 1843, "sand": 1.539, "cont": 340 }
+  ]
+}
