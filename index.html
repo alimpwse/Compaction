@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,6 +40,13 @@ select{appearance:none;
   background-position:calc(100% - 17px) 50%,calc(100% - 12px) 50%; background-size:5px 5px,5px 5px;
   background-repeat:no-repeat; padding-right:32px}
 input:focus,select:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--blue); outline-offset:1px}
+input[type="date"]{-webkit-appearance:none; appearance:none; line-height:22px}
+input[type="date"]::-webkit-date-and-time-value{text-align:left; font-family:"IBM Plex Sans",sans-serif; font-size:15px}
+input[type="date"]::-webkit-datetime-edit,input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit-text,input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,input[type="date"]::-webkit-datetime-edit-year-field{
+  color:var(--ink); font-family:"IBM Plex Sans",sans-serif; font-size:15px}
+input[type="date"]::-webkit-calendar-picker-indicator{opacity:.65}
 
 .sheet{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); overflow:hidden; margin-top:12px}
 .sheet-head{background:#f6f8f9; border-bottom:1px solid var(--line); padding:8px 12px;
@@ -124,10 +132,37 @@ code{background:#eceff2; border-radius:4px; padding:1px 5px; font-family:"IBM Pl
 
 @media (max-width:380px){ .row,.erow{grid-template-columns:20px 1fr 100px 40px} .row .lbl{font-size:12.5px} }
 @media print{
-  header,.actions,.legend,.hbtn,footer,.entry,.banner,.pick{display:none !important}
-  body{background:#fff} .wrap{padding:0} .sheet,.result{border-color:#999; break-inside:avoid}
-  .verdict{-webkit-print-color-adjust:exact; print-color-adjust:exact}
-  .row input.ent{border:0; background:#fff !important; padding:8px 0}
+  @page{ size:A4; margin:8mm }
+  header,.actions,.legend,.hbtn,footer,.banner,.pick,#sheetEntry{display:none !important}
+  *{transition:none !important}
+  body{background:#fff; font-size:10.5px; line-height:1.25; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .wrap{padding:0; display:flex; flex-direction:column; gap:6px}
+  .meta{order:1; margin:0; gap:6px}
+  #sheetFull{order:2; margin:0}
+  .result{order:3; margin:0}
+  .sheet,.result{border-color:#999; break-inside:avoid}
+
+  .field label{font-size:9.5px; margin-bottom:2px}
+  .field input,.pick select{min-height:auto; padding:4px 6px; font-size:11px; border-color:#aaa}
+
+  .sheet-head{padding:4px 10px}
+  .sheet-head b{font-size:11px}
+  .band{padding:3px 10px; font-size:9px}
+  .row{padding:2px 10px 2px 6px; min-height:0}
+  .row .n{font-size:9px}
+  .row .lbl{font-size:10px; line-height:1.2}
+  .row .unit{font-size:9px}
+  .row .out{padding:2px 6px; min-height:0; line-height:15px; border-radius:4px}
+  .row input.ent{border:0; background:#fff !important; padding:2px 0; min-height:0; font-size:10.5px}
+
+  .verdict{padding:6px 10px}
+  .verdict .big{font-size:20px}
+  .verdict .tag{font-size:12px}
+  .verdict .sub{font-size:10px}
+  .gauge{height:16px}
+  .gauge .mtext,.gauge .scale{font-size:8px}
+  .notes{padding:4px 10px}
+  .notes div{padding:0; font-size:10px; line-height:1.3}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
@@ -148,27 +183,27 @@ code{background:#eceff2; border-radius:4px; padding:1px 5px; font-family:"IBM Pl
     <div class="field"><label for="inspSel">Inspector</label><select id="inspSel"></select></div>
   </div>
 
-  <div class="sheet">
+  <div class="sheet" id="sheetEntry">
     <div class="sheet-head"><b>Enter readings</b><span id="setupWarn" class="hide" style="color:var(--fail)">Missing setup values</span></div>
     <div class="entry">
       <div class="erow">
         <div class="n">1</div><div class="lbl">Wt. of apparatus filled with sand</div>
-        <div><input id="i1" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div><input id="i1" class="num" type="text" inputmode="decimal" placeholder="0"></div>
         <div class="unit">gm</div>
       </div>
       <div class="erow">
         <div class="n">2</div><div class="lbl">Wt. of apparatus and remaining sand</div>
-        <div><input id="i2" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div><input id="i2" class="num" type="text" inputmode="decimal" placeholder="0"></div>
         <div class="unit">gm</div>
       </div>
       <div class="erow">
         <div class="n">8</div><div class="lbl">Wt. of wet soil from hole + container</div>
-        <div><input id="i8" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div><input id="i8" class="num" type="text" inputmode="decimal" placeholder="0"></div>
         <div class="unit">gm</div>
       </div>
       <div class="erow">
         <div class="n">12</div><div class="lbl">Moisture content (T-217)</div>
-        <div><input id="i12" class="num" type="number" inputmode="decimal" step="any" placeholder="0"></div>
+        <div><input id="i12" class="num" type="text" inputmode="decimal" placeholder="0"></div>
         <div class="unit">%</div>
       </div>
     </div>
@@ -184,18 +219,20 @@ code{background:#eceff2; border-radius:4px; padding:1px 5px; font-family:"IBM Pl
       <div class="bar" id="gBar" style="width:0"></div>
       <div class="mark" id="gMark" style="left:33%"></div>
       <div class="mtext" id="gMtext" style="left:33%">95%</div>
+      <div class="mark" id="gMark2" style="left:67%"></div>
+      <div class="mtext" id="gMtext2" style="left:67%; transform:translate(-100%,-50%)">100%</div>
       <div class="scale" style="left:6px">90%</div>
       <div class="scale" style="right:6px">105%</div>
     </div>
     <div class="notes" id="notes"></div>
   </div>
 
-  <div class="sheet">
+  <div class="sheet" id="sheetFull">
     <div class="sheet-head"><b>Full test sheet</b><span id="sheetTag"></span></div>
 
     <div class="band">VOLUME OF TEST HOLE</div>
-    <div class="row"><div class="n">1</div><div class="lbl">Wt. of apparatus filled with sand</div><div><input id="v1" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
-    <div class="row"><div class="n">2</div><div class="lbl">Wt. of apparatus and remaining sand</div><div><input id="v2" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">1</div><div class="lbl">Wt. of apparatus filled with sand</div><div><input id="v1" class="ent num" type="text" inputmode="decimal" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">2</div><div class="lbl">Wt. of apparatus and remaining sand</div><div><input id="v2" class="ent num" type="text" inputmode="decimal" placeholder="0"></div><div class="unit">gm</div></div>
     <div class="row sub"><div class="n">3</div><div class="lbl">Wt. of sand in hole, plate and cone</div><div><span class="out num" id="o3">—</span></div><div class="unit">gm</div></div>
     <div class="row"><div class="n">4</div><div class="lbl">Wt. of sand in cone and plate</div><div><span class="out fix num" id="f4">—</span></div><div class="unit">gm</div></div>
     <div class="row sub"><div class="n">5</div><div class="lbl">Wt. of sand in hole</div><div><span class="out num" id="o5">—</span></div><div class="unit">gm</div></div>
@@ -203,13 +240,13 @@ code{background:#eceff2; border-radius:4px; padding:1px 5px; font-family:"IBM Pl
     <div class="row sub"><div class="n">7</div><div class="lbl">Volume of test hole</div><div><span class="out num" id="o7">—</span></div><div class="unit">cm³</div></div>
 
     <div class="band">WET DENSITY</div>
-    <div class="row"><div class="n">8</div><div class="lbl">Wt. of wet soil from hole + container</div><div><input id="v8" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">gm</div></div>
+    <div class="row"><div class="n">8</div><div class="lbl">Wt. of wet soil from hole + container</div><div><input id="v8" class="ent num" type="text" inputmode="decimal" placeholder="0"></div><div class="unit">gm</div></div>
     <div class="row"><div class="n">9</div><div class="lbl">Wt. of container</div><div><span class="out fix num" id="f9">—</span></div><div class="unit">gm</div></div>
     <div class="row sub"><div class="n">10</div><div class="lbl">Wt. of soil from hole</div><div><span class="out num" id="o10">—</span></div><div class="unit">gm</div></div>
     <div class="row sub"><div class="n">11</div><div class="lbl">Wet density</div><div><span class="out num" id="o11">—</span></div><div class="unit">g/cm³</div></div>
 
     <div class="band">DRY DENSITY</div>
-    <div class="row"><div class="n">12</div><div class="lbl">Moisture content (T-217)</div><div><input id="v12" class="ent num" type="number" inputmode="decimal" step="any" placeholder="0"></div><div class="unit">%</div></div>
+    <div class="row"><div class="n">12</div><div class="lbl">Moisture content (T-217)</div><div><input id="v12" class="ent num" type="text" inputmode="decimal" placeholder="0"></div><div class="unit">%</div></div>
     <div class="row sub"><div class="n">13</div><div class="lbl">Dry density</div><div><span class="out num" id="o13">—</span></div><div class="unit">g/cm³</div></div>
     <div class="row"><div class="n">14</div><div class="lbl">Max. dry density</div><div><span class="out fix num" id="f14">—</span></div><div class="unit">g/cm³</div></div>
     <div class="row"><div class="n">15</div><div class="lbl">Optimum moisture content</div><div><span class="out fix num" id="f15">—</span></div><div class="unit">%</div></div>
@@ -319,7 +356,15 @@ var cfg = clone(EMBEDDED);
 var usingLocal = false;
 var $ = function(id){return document.getElementById(id);};
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
-function num(v){ var n=parseFloat(v); return isFinite(n)?n:NaN; }
+var DIGIT_MAP = {
+  "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+  "۰":"0","۱":"1","۲":"2","۳":"3","۴":"4","۵":"5","۶":"6","۷":"7","۸":"8","۹":"9",
+  "٫":".", "،":"."
+};
+function toEnglishDigits(s){
+  return String(s).replace(/[٠-٩۰-۹٫،]/g, function(d){ return DIGIT_MAP[d]; });
+}
+function num(v){ var n=parseFloat(toEnglishDigits(v)); return isFinite(n)?n:NaN; }
 function fmt(n,d){ return isFinite(n)?n.toFixed(d):"—"; }
 function valid(o){ return o && Array.isArray(o.blocks) && Array.isArray(o.inspectors) && o.blocks.length && o.inspectors.length; }
 function toast(m){ var t=$("toast"); t.textContent=m; t.classList.add("on"); setTimeout(function(){t.classList.remove("on");},2000); }
@@ -402,6 +447,8 @@ function calc(){
   notes.innerHTML="";
   var mpos = Math.max(0,Math.min(100,((min>0?min:95)-90)/15*100));
   $("gMark").style.left=mpos+"%"; $("gMtext").style.left=mpos+"%"; $("gMtext").textContent=fmt(min>0?min:95,0)+"%";
+  var mpos2 = Math.max(0,Math.min(100,(100-90)/15*100));
+  $("gMark2").style.left=mpos2+"%"; $("gMtext2").style.left=mpos2+"%";
 
   if(!ready){
     v.className="verdict idle";
@@ -410,15 +457,17 @@ function calc(){
     $("vSub").textContent = "";
     bar.style.width="0"; bar.className="bar";
   } else {
-    var compOk = r16>=min, pass = compOk && !moistFail;
+    var underMin = r16<min, overMax = r16>100;
+    var compOk = !underMin && !overMax, pass = compOk && !moistFail;
     v.className = "verdict "+(pass?"ok":"no");
     $("vPct").textContent = fmt(r16,1)+"%";
     $("vTag").textContent = pass?"PASS":"FAIL";
     $("vSub").textContent = "dry density "+fmt(r13,3)+" g/cm³";
     bar.style.width = Math.max(0,Math.min(100,(r16-90)/15*100))+"%";
     bar.className = "bar"+(pass?"":" no");
-    if(compOk) oks.push("Compaction "+fmt(r16,1)+"% meets the "+fmt(min,1)+"% minimum.");
-    else errs.push("Compaction "+fmt(r16,1)+"% is below the "+fmt(min,1)+"% minimum.");
+    if(compOk) oks.push("Compaction "+fmt(r16,1)+"% is within the accepted "+fmt(min,1)+"%–100% range.");
+    else if(underMin) errs.push("Compaction "+fmt(r16,1)+"% is below the "+fmt(min,1)+"% minimum.");
+    else if(overMax) errs.push("Compaction "+fmt(r16,1)+"% is above 100% — recheck the entries.");
     if(moistOk) oks.push("Moisture "+fmt(mc,1)+"% is within "+fmt(omc,1)+" ±"+fmt(tol,0)+".");
     if(moistFail) errs.push("Moisture "+fmt(mc,1)+"% is outside "+fmt(omc,1)+" ±"+fmt(tol,0)+" — layer rejected.");
   }
@@ -432,7 +481,7 @@ function note(cls,text){ var d=document.createElement("div"); d.className=cls; d
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
 function mini(k,f,label,val){
   return '<div class="mini"><label>'+label+'</label><input class="num" data-k="'+k+'" data-f="'+f+
-    '" type="number" inputmode="decimal" step="any" value="'+(val||val===0?val:"")+'" placeholder="0"></div>';
+    '" type="text" inputmode="decimal" value="'+(val||val===0?val:"")+'" placeholder="0"></div>';
 }
 function renderBlocks(){
   var box=$("blockList"); box.innerHTML="";
@@ -481,6 +530,19 @@ function showSettings(){
   $("pw").value=""; $("pwErr").textContent=""; $("pw").focus(); window.scrollTo(0,0);
 }
 function showTest(){ $("viewSettings").classList.add("hide"); $("viewTest").classList.remove("hide"); window.scrollTo(0,0); }
+
+/* ---------- normalize Arabic/Persian digits live as the user types ---------- */
+document.addEventListener("input", function(e){
+  var el = e.target;
+  if(el && el.tagName==="INPUT" && el.classList.contains("num")){
+    var start = el.selectionStart, before = el.value, after = toEnglishDigits(before);
+    if(after !== before){
+      var diff = after.length - before.length;
+      el.value = after;
+      if(start!=null) el.setSelectionRange(start+diff, start+diff);
+    }
+  }
+}, true);
 
 /* ---------- wiring: linked entry pairs (top summary <-> full sheet) ---------- */
 var PAIRS = [["i1","v1"],["i2","v2"],["i8","v8"],["i12","v12"]];
